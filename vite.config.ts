@@ -4,12 +4,7 @@ import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [
-        react(),
-        // for dicom-parser
-        viteCommonjs(),
-    ],
-    // seems like only required in dev mode
+    plugins: [react(), viteCommonjs()],
     optimizeDeps: {
         exclude: ['@cornerstonejs/dicom-image-loader'],
         include: ['dicom-parser'],

@@ -1,54 +1,56 @@
-# React + TypeScript + Vite
+# React + TypeScript + Vite + Cornerstone3D
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This template provides a minimal setup to get Cornerstone3D and React working with Vite. Following are some things right out of the box:
 
-Currently, two official plugins are available:
+- Tailwind is setup
+- ESLint and Prettier are setup
+- Cornerstone3D ecosystem of libraries are installed
+- an example stack viewport with length tool and stack scroll tools activated
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Run the app with `npm run dev`**
 
-## Expanding the ESLint configuration
+`dicomweb-client`'s latest version (0.11.1) has a bug on the [dicomweb-client/src/api.js > retrieveSeriesMetadata](https://github.com/dcmjs-org/dicomweb-client/blob/9c3331fcc5b78db435bfc07a9d1ebc4253446f39/src/api.js#L1112) function, where it tries to access a `withCredentails` variable, which is not in the scope.
+Due to this issue, we're using an older version (0.10.4) for the package.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Things to consider for Vite
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+The configuration is mostly standard Vite + React setup, with specific accommodations for:
+
+- WASM decoders used by Cornerstone libraries
+- DICOM parser which currently uses CommonJS format
+
+Follwing are the addition packages and configuration needed to make this work with Vite
+
+`package.json`
+
+```
+"dependencies": {
+  "vite-plugin-wasm": "3.4.1"
+},
+"devDependencies": {
+  "@rollup/plugin-commonjs": "28.0.3",
+  "@rollup/plugin-wasm": "6.2.2",
+  "@originjs/vite-plugin-commonjs": "1.0.3",
+}
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Following configurations are needed because of the reasons mentioned above:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+`vite.config.ts`
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```
+plugins: [
+    ...
+    viteCommonjs(),
+],
+optimizeDeps: {
+    exclude: ['@cornerstonejs/dicom-image-loader'],
+    include: ['dicom-parser'],
+},
+worker: {
+    format: 'es',
+    rollupOptions: {
+        external: ['@icr/polyseg-wasm'],
+    },
+},
 ```
