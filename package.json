@@ -1,0 +1,47 @@
+{
+    "name": "cornerstone-demo",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "lint": "eslint .",
+        "preview": "vite preview",
+        "format": "prettier --write \"src/**/*.{js,ts,jsx,tsx,json,css,md}\""
+    },
+    "dependencies": {
+        "@cornerstonejs/core": "3.8.6",
+        "@cornerstonejs/dicom-image-loader": "3.8.6",
+        "@cornerstonejs/tools": "3.8.6",
+        "@tailwindcss/postcss": "4.1.3",
+        "dicomweb-client": "0.10.4",
+        "postcss": "8.5.3",
+        "react": "19.1.0",
+        "react-dom": "19.1.0",
+        "tailwindcss": "4.1.3",
+        "vite-plugin-wasm": "3.4.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "9.24.0",
+        "@types/react": "19.1.0",
+        "@types/react-dom": "19.1.1",
+        "@typescript-eslint/eslint-plugin": "8.29.0",
+        "@typescript-eslint/parser": "8.29.0",
+        "@vitejs/plugin-react": "4.3.4",
+        "@rollup/plugin-commonjs": "28.0.3",
+        "@rollup/plugin-wasm": "6.2.2",
+        "@originjs/vite-plugin-commonjs": "1.0.3",
+        "eslint": "9.24.0",
+        "eslint-config-prettier": "10.1.1",
+        "eslint-plugin-prettier": "5.2.6",
+        "eslint-plugin-react": "7.37.5",
+        "eslint-plugin-react-hooks": "5.2.0",
+        "eslint-plugin-react-refresh": "0.4.19",
+        "globals": "16.0.0",
+        "prettier": "3.5.3",
+        "typescript": "5.8.3",
+        "typescript-eslint": "8.29.0",
+        "vite": "6.2.5"
+    }
+}
