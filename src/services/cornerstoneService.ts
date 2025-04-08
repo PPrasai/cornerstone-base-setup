@@ -26,6 +26,7 @@ export interface ViewerConfig {
 
 export class CornerstoneService {
     renderingEngine: RenderingEngine | null = null;
+    private resizeObservers: Map<string, ResizeObserver> = new Map();
 
     constructor(renderingEngineId = 'unnamed-engine') {
         init();
@@ -50,6 +51,8 @@ export class CornerstoneService {
                 background: [0.2, 0, 0.2] as Types.Point3,
             },
         };
+
+        config.element.oncontextmenu = (e) => e.preventDefault();
 
         if (!this.renderingEngine.getViewport(viewportInput.viewportId)) {
             this.renderingEngine.enableElement(viewportInput);
@@ -80,16 +83,42 @@ export class CornerstoneService {
             });
         }
 
+        let resizeTimeout: NodeJS.Timeout | null = null;
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (resizeTimeout) {
+                clearTimeout(resizeTimeout);
+            }
+
+            resizeTimeout = setTimeout(() => {
+                if (!this.renderingEngine || !viewport) return;
+
+                this.renderingEngine.resize(true, true);
+                viewport.setViewReference(viewport.getViewReference());
+                viewport.setViewPresentation(viewport.getViewPresentation());
+
+                resizeTimeout = null;
+            }, 50);
+        });
+
+        resizeObserver.observe(config.element);
+        this.resizeObservers.set(config.viewportId, resizeObserver);
+
         await viewport.setStack(config.imageIds, config.defaultImageIndex || 0);
         viewport.render();
 
         return viewport;
     }
 
-    public destroy(): void {
-        if (this.renderingEngine) {
-            this.renderingEngine.destroy();
-            this.renderingEngine = null;
+    public destroy(viewportId: string): void {
+        if (!this.renderingEngine) return;
+
+        const observer = this.resizeObservers.get(viewportId);
+        if (observer) {
+            observer.disconnect();
+            this.resizeObservers.delete(viewportId);
         }
+
+        this.renderingEngine.disableElement(viewportId);
     }
 }

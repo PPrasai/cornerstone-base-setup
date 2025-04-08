@@ -1,12 +1,11 @@
-// App.tsx
 import React, { useEffect, useState } from 'react';
-import './App.css';
 import { DicomQueryParams, fetchImageIds } from './services/dicomService';
 import {
     CornerstoneService,
     ViewerConfig,
 } from './services/cornerstoneService';
 import { createStackViewerConfig } from './services/viewerConfigService';
+import './App.css';
 
 const dicomParams: DicomQueryParams = {
     StudyInstanceUID:
@@ -15,6 +14,8 @@ const dicomParams: DicomQueryParams = {
         '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
 };
+
+const STACK_VIEWPORT_ID = 'stack-viewport';
 
 function App(): React.JSX.Element {
     const [cornerstoneService, setCornerstoneService] =
@@ -31,7 +32,7 @@ function App(): React.JSX.Element {
         initialize();
 
         return () => {
-            cornerstoneService?.destroy();
+            cornerstoneService?.destroy(STACK_VIEWPORT_ID);
         };
     }, []);
 
@@ -39,12 +40,12 @@ function App(): React.JSX.Element {
         if (!cornerstoneService || imageIds.length === 0) return;
 
         const element = document.getElementById(
-            'stack-viewport',
+            STACK_VIEWPORT_ID,
         ) as HTMLDivElement;
         if (!element) return;
 
         const viewerConfig: ViewerConfig = createStackViewerConfig({
-            viewportId: 'stack-viewport',
+            viewportId: STACK_VIEWPORT_ID,
             element,
             imageIds,
             defaultImageIndex: 10,
@@ -55,13 +56,13 @@ function App(): React.JSX.Element {
     }, [cornerstoneService, imageIds]);
 
     return (
-        <>
+        <div className="flex flex-col items-center justify-center h-screen">
             {cornerstoneService ? (
-                <div id="stack-viewport" className="h-[800px] w-[800px]"></div>
+                <div id={STACK_VIEWPORT_ID} className="h-[80vh] w-[80vw]"></div>
             ) : (
                 <p>Loading...</p>
             )}
-        </>
+        </div>
     );
 }
 
