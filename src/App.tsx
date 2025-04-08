@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import { init, RenderingEngine, Enums, Types } from '@cornerstonejs/core';
-import createImageIds from './createImageIds';
 import {
     Enums as ToolEnums,
     addTool,
@@ -11,6 +10,8 @@ import {
     LengthTool,
     init as toolsInit,
 } from '@cornerstonejs/tools';
+
+import { fetchImageIds } from './services/fetchImageIds';
 
 const { ViewportType } = Enums;
 const { MouseBindings } = ToolEnums;
@@ -35,7 +36,7 @@ function App(): React.JSX.Element {
         init();
         toolsInit();
 
-        createImageIds({
+        fetchImageIds({
             StudyInstanceUID:
                 '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
             SeriesInstanceUID:
