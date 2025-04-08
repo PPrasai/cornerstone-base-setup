@@ -25,7 +25,6 @@ function App(): React.JSX.Element {
         async function initialize() {
             const ids = await fetchImageIds(dicomParams);
             const cornerstoneService = new CornerstoneService();
-            cornerstoneService.createRenderingEngine();
             setImageIds(ids);
             setManager(cornerstoneService);
             setInitialized(true);
@@ -41,12 +40,13 @@ function App(): React.JSX.Element {
         ) as HTMLDivElement;
         if (!element) return;
 
-        const viewerConfig: ViewerConfig = createStackViewerConfig(
-            'stack-viewport',
+        const viewerConfig: ViewerConfig = createStackViewerConfig({
+            viewportId: 'stack-viewport',
             element,
             imageIds,
-            { background: [0.1, 0.1, 0.3] },
-        );
+            defaultImageIndex: 10,
+            options: { background: [0.1, 0.1, 0.3] },
+        });
 
         manager.setupViewer(viewerConfig);
     }, [initialized, manager, imageIds]);

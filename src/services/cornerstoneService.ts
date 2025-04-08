@@ -19,6 +19,7 @@ export interface ViewerConfig {
     element: HTMLDivElement;
     viewerType: Enums.ViewportType;
     imageIds: string[];
+    defaultImageIndex?: number;
     defaultOptions?: Types.ViewportInputOptions;
     tools?: ToolConfiguration[];
 }
@@ -26,15 +27,12 @@ export interface ViewerConfig {
 export class CornerstoneService {
     renderingEngine: RenderingEngine | null = null;
 
-    constructor() {
+    constructor(renderingEngineId = 'unnamed-engine') {
         init();
         cornerstoneDICOMImageLoader.init();
         toolsInit();
-    }
 
-    public createRenderingEngine(engineId = 'demo-engine'): RenderingEngine {
-        this.renderingEngine = new RenderingEngine(engineId);
-        return this.renderingEngine;
+        this.renderingEngine = new RenderingEngine(renderingEngineId);
     }
 
     public async setupViewer(
@@ -53,30 +51,36 @@ export class CornerstoneService {
             },
         };
 
-        this.renderingEngine.enableElement(viewportInput);
+        if (!this.renderingEngine.getViewport(viewportInput.viewportId)) {
+            this.renderingEngine.enableElement(viewportInput);
+        }
 
         const viewport = this.renderingEngine.getViewport(
             config.viewportId,
         ) as Types.IStackViewport;
 
-        const toolGroup = ToolGroupManager.createToolGroup(
-            `${config.viewportId}-group`,
-        );
-        toolGroup?.addViewport(viewport.id, this.renderingEngine.id);
+        const toolGroupId = `${config.viewportId}-group`;
+        let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+        if (!toolGroup) {
+            toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+        }
+
+        toolGroup!.addViewport(viewport.id, this.renderingEngine.id);
 
         if (config.tools && config.tools.length > 0) {
             config.tools.forEach((toolConfig) => {
                 addTool(toolConfig.tool);
-                toolGroup?.addTool(toolConfig.toolName);
+                toolGroup!.addTool(toolConfig.toolName);
                 if (toolConfig.active && toolConfig.bindings) {
-                    toolGroup?.setToolActive(toolConfig.toolName, {
+                    toolGroup!.setToolActive(toolConfig.toolName, {
                         bindings: toolConfig.bindings,
                     });
                 }
             });
         }
 
-        await viewport.setStack(config.imageIds, 10);
+        await viewport.setStack(config.imageIds, config.defaultImageIndex || 0);
         viewport.render();
 
         return viewport;

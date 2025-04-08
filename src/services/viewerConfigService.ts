@@ -9,15 +9,20 @@ import { ToolConfiguration, ViewerConfig } from './cornerstoneService';
 const { ViewportType } = Enums;
 const { MouseBindings } = ToolEnums;
 
-export function createStackViewerConfig(
-    viewportId: string,
-    element: HTMLDivElement,
-    imageIds: string[],
+interface StackViewerConfig {
+    viewportId: string;
+    element: HTMLDivElement;
+    imageIds: string[];
+    defaultImageIndex?: number;
     options?: {
         background?: Types.Point3;
-    },
+    };
+}
+
+export function createStackViewerConfig(
+    config: StackViewerConfig,
 ): ViewerConfig {
-    const background = options?.background || [0.2, 0, 0.2];
+    const background = config.options?.background || [0.2, 0, 0.2];
 
     const tools: ToolConfiguration[] = [
         {
@@ -35,10 +40,11 @@ export function createStackViewerConfig(
     ];
 
     return {
-        viewportId,
-        element,
+        viewportId: config.viewportId,
+        element: config.element,
+        defaultImageIndex: config.defaultImageIndex,
         viewerType: ViewportType.STACK,
-        imageIds,
+        imageIds: config.imageIds,
         defaultOptions: { background },
         tools,
     };
