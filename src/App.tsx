@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'
-import './App.css'
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader'
-import { init, RenderingEngine, Enums, Types } from '@cornerstonejs/core'
-import createImageIds from './createImageIds'
+import React, { useEffect, useState } from 'react';
+import './App.css';
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import { init, RenderingEngine, Enums, Types } from '@cornerstonejs/core';
+import createImageIds from './createImageIds';
 import {
     Enums as ToolEnums,
     addTool,
@@ -10,30 +10,30 @@ import {
     ToolGroupManager,
     LengthTool,
     init as toolsInit,
-} from '@cornerstonejs/tools'
+} from '@cornerstonejs/tools';
 
-const { ViewportType } = Enums
-const { MouseBindings } = ToolEnums
+const { ViewportType } = Enums;
+const { MouseBindings } = ToolEnums;
 
 function App(): React.JSX.Element {
-    const [renderingEngine, setRenderingEngine] = useState<RenderingEngine>()
-    const [cornerstoneInitialized, setCornerstoneInitialized] = useState(false)
-    const [imageIds, setImageIds] = useState<string[]>([])
+    const [renderingEngine, setRenderingEngine] = useState<RenderingEngine>();
+    const [cornerstoneInitialized, setCornerstoneInitialized] = useState(false);
+    const [imageIds, setImageIds] = useState<string[]>([]);
 
     const render = async (
         imageIds: string[],
         viewport: Types.IStackViewport,
     ) => {
-        await viewport.setStack(imageIds, 10)
-        viewport.render()
-    }
+        await viewport.setStack(imageIds, 10);
+        viewport.render();
+    };
 
     useEffect(() => {
-        if (cornerstoneInitialized) return
+        if (cornerstoneInitialized) return;
 
-        cornerstoneDICOMImageLoader.init()
-        init()
-        toolsInit()
+        cornerstoneDICOMImageLoader.init();
+        init();
+        toolsInit();
 
         createImageIds({
             StudyInstanceUID:
@@ -42,19 +42,19 @@ function App(): React.JSX.Element {
                 '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
             wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
         }).then((ids) => {
-            setImageIds(ids)
-            setCornerstoneInitialized(true)
-            setRenderingEngine(new RenderingEngine('demo-engine'))
-        })
-    }, [])
+            setImageIds(ids);
+            setCornerstoneInitialized(true);
+            setRenderingEngine(new RenderingEngine('demo-engine'));
+        });
+    }, []);
 
     useEffect(() => {
         if (!cornerstoneInitialized || imageIds.length <= 0 || !renderingEngine)
-            return
+            return;
 
         const element = document.getElementById(
             'stack-viewport',
-        ) as HTMLDivElement
+        ) as HTMLDivElement;
 
         const viewportInput = {
             viewportId: 'demo-stack-viewport',
@@ -63,39 +63,39 @@ function App(): React.JSX.Element {
             defaultOptions: {
                 background: [0.2, 0, 0.2] as Types.Point3,
             },
-        }
+        };
 
-        renderingEngine.enableElement(viewportInput)
+        renderingEngine.enableElement(viewportInput);
 
         const viewport = renderingEngine.getViewport(
             viewportInput.viewportId,
-        ) as Types.IStackViewport
+        ) as Types.IStackViewport;
 
-        addTool(StackScrollTool)
-        addTool(LengthTool)
+        addTool(StackScrollTool);
+        addTool(LengthTool);
 
-        const toolGroup = ToolGroupManager.createToolGroup('stack-tool-group')
-        toolGroup?.addViewport(viewport.id, renderingEngine.id)
-        toolGroup?.addTool(StackScrollTool.toolName)
+        const toolGroup = ToolGroupManager.createToolGroup('stack-tool-group');
+        toolGroup?.addViewport(viewport.id, renderingEngine.id);
+        toolGroup?.addTool(StackScrollTool.toolName);
         toolGroup?.setToolActive(StackScrollTool.toolName, {
             bindings: [
                 {
                     mouseButton: MouseBindings.Wheel,
                 },
             ],
-        })
+        });
 
-        toolGroup?.addTool(LengthTool.toolName)
+        toolGroup?.addTool(LengthTool.toolName);
         toolGroup?.setToolActive(LengthTool.toolName, {
             bindings: [
                 {
                     mouseButton: MouseBindings.Primary,
                 },
             ],
-        })
+        });
 
-        render(imageIds, viewport)
-    }, [cornerstoneInitialized, imageIds, renderingEngine])
+        render(imageIds, viewport);
+    }, [cornerstoneInitialized, imageIds, renderingEngine]);
 
     return (
         <>
@@ -105,7 +105,7 @@ function App(): React.JSX.Element {
                 <p>Loading...</p>
             )}
         </>
-    )
+    );
 }
 
-export default App
+export default App;
