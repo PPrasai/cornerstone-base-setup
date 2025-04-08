@@ -20,7 +20,6 @@ function App(): React.JSX.Element {
     const [cornerstoneService, setCornerstoneService] =
         useState<CornerstoneService | null>(null);
     const [imageIds, setImageIds] = useState<string[]>([]);
-    const [initialized, setInitialized] = useState(false);
 
     useEffect(() => {
         async function initialize() {
@@ -28,7 +27,6 @@ function App(): React.JSX.Element {
             const service = new CornerstoneService();
             setImageIds(ids);
             setCornerstoneService(service);
-            setInitialized(true);
         }
         initialize();
 
@@ -38,8 +36,7 @@ function App(): React.JSX.Element {
     }, []);
 
     useEffect(() => {
-        if (!initialized || !cornerstoneService || imageIds.length === 0)
-            return;
+        if (!cornerstoneService || imageIds.length === 0) return;
 
         const element = document.getElementById(
             'stack-viewport',
@@ -55,11 +52,11 @@ function App(): React.JSX.Element {
         });
 
         cornerstoneService.setupViewer(viewerConfig);
-    }, [initialized, cornerstoneService, imageIds]);
+    }, [cornerstoneService, imageIds]);
 
     return (
         <>
-            {initialized ? (
+            {cornerstoneService ? (
                 <div id="stack-viewport" className="h-[800px] w-[800px]"></div>
             ) : (
                 <p>Loading...</p>
