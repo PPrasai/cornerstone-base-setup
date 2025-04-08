@@ -85,4 +85,11 @@ export class CornerstoneService {
 
         return viewport;
     }
+
+    public destroy(): void {
+        if (this.renderingEngine) {
+            this.renderingEngine.destroy();
+            this.renderingEngine = null;
+        }
+    }
 }

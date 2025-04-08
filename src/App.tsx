@@ -17,23 +17,29 @@ const dicomParams: DicomQueryParams = {
 };
 
 function App(): React.JSX.Element {
-    const [manager, setManager] = useState<CornerstoneService | null>(null);
+    const [cornerstoneService, setCornerstoneService] =
+        useState<CornerstoneService | null>(null);
     const [imageIds, setImageIds] = useState<string[]>([]);
     const [initialized, setInitialized] = useState(false);
 
     useEffect(() => {
         async function initialize() {
             const ids = await fetchImageIds(dicomParams);
-            const cornerstoneService = new CornerstoneService();
+            const service = new CornerstoneService();
             setImageIds(ids);
-            setManager(cornerstoneService);
+            setCornerstoneService(service);
             setInitialized(true);
         }
         initialize();
+
+        return () => {
+            cornerstoneService?.destroy();
+        };
     }, []);
 
     useEffect(() => {
-        if (!initialized || !manager || imageIds.length === 0) return;
+        if (!initialized || !cornerstoneService || imageIds.length === 0)
+            return;
 
         const element = document.getElementById(
             'stack-viewport',
@@ -48,8 +54,8 @@ function App(): React.JSX.Element {
             options: { background: [0.1, 0.1, 0.3] },
         });
 
-        manager.setupViewer(viewerConfig);
-    }, [initialized, manager, imageIds]);
+        cornerstoneService.setupViewer(viewerConfig);
+    }, [initialized, cornerstoneService, imageIds]);
 
     return (
         <>
