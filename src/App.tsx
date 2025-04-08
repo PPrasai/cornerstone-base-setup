@@ -1,18 +1,12 @@
 // App.tsx
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import { Enums } from '@cornerstonejs/core';
-import { StackScrollTool, Enums as ToolEnums } from '@cornerstonejs/tools';
-import { LengthTool } from '@cornerstonejs/tools';
 import { DicomQueryParams, fetchImageIds } from './services/dicomService';
 import {
     CornerstoneService,
-    ToolConfiguration,
     ViewerConfig,
 } from './services/cornerstoneService';
-
-const { ViewportType } = Enums;
-const { MouseBindings } = ToolEnums;
+import { createStackViewerConfig } from './services/viewerConfigService';
 
 const dicomParams: DicomQueryParams = {
     StudyInstanceUID:
@@ -47,27 +41,12 @@ function App(): React.JSX.Element {
         ) as HTMLDivElement;
         if (!element) return;
 
-        const viewerConfig: ViewerConfig = {
-            viewportId: 'stack-viewport',
+        const viewerConfig: ViewerConfig = createStackViewerConfig(
+            'stack-viewport',
             element,
-            viewerType: ViewportType.STACK,
             imageIds,
-            defaultOptions: { background: [0.1, 0.1, 0.3] },
-            tools: [
-                {
-                    tool: StackScrollTool,
-                    toolName: StackScrollTool.toolName,
-                    active: true,
-                    bindings: [{ mouseButton: MouseBindings.Wheel }],
-                },
-                {
-                    tool: LengthTool,
-                    toolName: LengthTool.toolName,
-                    active: true,
-                    bindings: [{ mouseButton: MouseBindings.Primary }],
-                },
-            ] as ToolConfiguration[],
-        };
+            { background: [0.1, 0.1, 0.3] },
+        );
 
         manager.setupViewer(viewerConfig);
     }, [initialized, manager, imageIds]);

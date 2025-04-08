@@ -1,6 +1,5 @@
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import { WADORSMetaData } from '@cornerstonejs/dicom-image-loader/types';
-
 import { api } from 'dicomweb-client';
 import { InstanceMetadata } from 'dicomweb-client/types/api';
 
@@ -20,8 +19,6 @@ export async function fetchImageIds({
     SOPInstanceUID = null,
     wadoRsRoot,
 }: DicomQueryParams): Promise<string[]> {
-    cornerstoneDICOMImageLoader.init();
-
     const studySearchOptions = {
         studyInstanceUID: StudyInstanceUID,
         seriesInstanceUID: SeriesInstanceUID,
