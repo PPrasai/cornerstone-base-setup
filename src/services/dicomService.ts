@@ -6,7 +6,6 @@ import { InstanceMetadata } from 'dicomweb-client/types/api';
 export type DicomQueryParams = {
     StudyInstanceUID: string;
     SeriesInstanceUID: string;
-    SOPInstanceUID?: string | null;
     wadoRsRoot: string;
 };
 
@@ -16,7 +15,6 @@ const SERIES_INSTANCE_UID = '0020000E';
 export async function fetchImageIds({
     StudyInstanceUID,
     SeriesInstanceUID,
-    SOPInstanceUID = null,
     wadoRsRoot,
 }: DicomQueryParams): Promise<string[]> {
     const studySearchOptions = {
@@ -35,9 +33,8 @@ export async function fetchImageIds({
     const imageIds = instances.map((instanceMetaData: InstanceMetadata) => {
         const seriesUID = instanceMetaData[SERIES_INSTANCE_UID]!
             .Value![0] as string;
-        const sopUIDToUse =
-            SOPInstanceUID ||
-            (instanceMetaData[SOP_INSTANCE_UID]!.Value![0] as string);
+        const sopUIDToUse = instanceMetaData[SOP_INSTANCE_UID]!
+            .Value![0] as string;
 
         let imageId = `${prefix}${wadoRsRoot}`;
         imageId += `/studies/${StudyInstanceUID.trim()}`;
