@@ -25,14 +25,13 @@ export interface ViewerConfig {
 }
 
 export class CornerstoneService {
-    renderingEngine: RenderingEngine | null = null;
+    private renderingEngine: RenderingEngine | null = null;
     private resizeObservers: Map<string, ResizeObserver> = new Map();
 
     constructor(renderingEngineId = 'unnamed-engine') {
         init();
         cornerstoneDICOMImageLoader.init();
         toolsInit();
-
         this.renderingEngine = new RenderingEngine(renderingEngineId);
     }
 
@@ -43,25 +42,73 @@ export class CornerstoneService {
             throw new Error('Rendering engine is not initialized.');
         }
 
-        const viewportInput = {
-            viewportId: config.viewportId,
-            element: config.element,
-            type: config.viewerType,
-            defaultOptions: config.defaultOptions || {
-                background: [0.2, 0, 0.2] as Types.Point3,
+        const viewport = await this._initViewport(config);
+        this._setupToolGroup(config, viewport);
+        this._observeResize(config.viewportId, config.element, viewport);
+
+        await this.setViewportStack(
+            config.viewportId,
+            config.imageIds,
+            config.defaultImageIndex,
+        );
+        return viewport;
+    }
+
+    public async setViewportStack(
+        viewportId: string,
+        imageIds: string[],
+        defaultImageIndex = 0,
+    ): Promise<void> {
+        const viewport = this.renderingEngine?.getViewport(
+            viewportId,
+        ) as Types.IStackViewport;
+
+        if (!viewport)
+            throw new Error(`Viewport with ID ${viewportId} not found.`);
+
+        await viewport.setStack(imageIds, defaultImageIndex);
+        viewport.render();
+    }
+
+    public destroy(viewportId: string): void {
+        const observer = this.resizeObservers.get(viewportId);
+        if (observer) {
+            observer.disconnect();
+            this.resizeObservers.delete(viewportId);
+        }
+
+        this.renderingEngine?.disableElement(viewportId);
+    }
+
+    private async _initViewport(
+        config: ViewerConfig,
+    ): Promise<Types.IStackViewport> {
+        const { viewportId, element, viewerType, defaultOptions } = config;
+
+        const viewportInput: Types.PublicViewportInput = {
+            viewportId,
+            element,
+            type: viewerType,
+            defaultOptions: defaultOptions || {
+                background: [0.2, 0, 0.2],
             },
         };
 
-        config.element.oncontextmenu = (e) => e.preventDefault();
+        element.oncontextmenu = (e) => e.preventDefault();
 
-        if (!this.renderingEngine.getViewport(viewportInput.viewportId)) {
-            this.renderingEngine.enableElement(viewportInput);
+        if (!this.renderingEngine!.getViewport(viewportId)) {
+            this.renderingEngine!.enableElement(viewportInput);
         }
 
-        const viewport = this.renderingEngine.getViewport(
-            config.viewportId,
+        return this.renderingEngine!.getViewport(
+            viewportId,
         ) as Types.IStackViewport;
+    }
 
+    private _setupToolGroup(
+        config: ViewerConfig,
+        viewport: Types.IStackViewport,
+    ) {
         const toolGroupId = `${config.viewportId}-group`;
         let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
@@ -69,56 +116,40 @@ export class CornerstoneService {
             toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
         }
 
-        toolGroup!.addViewport(viewport.id, this.renderingEngine.id);
+        toolGroup!.addViewport(viewport.id, this.renderingEngine!.id);
 
-        if (config.tools && config.tools.length > 0) {
-            config.tools.forEach((toolConfig) => {
-                addTool(toolConfig.tool);
-                toolGroup!.addTool(toolConfig.toolName);
-                if (toolConfig.active && toolConfig.bindings) {
-                    toolGroup!.setToolActive(toolConfig.toolName, {
-                        bindings: toolConfig.bindings,
-                    });
-                }
-            });
-        }
+        config.tools?.forEach((toolConfig) => {
+            addTool(toolConfig.tool);
+            toolGroup!.addTool(toolConfig.toolName);
+            if (toolConfig.active && toolConfig.bindings) {
+                toolGroup!.setToolActive(toolConfig.toolName, {
+                    bindings: toolConfig.bindings,
+                });
+            }
+        });
+    }
 
+    private _observeResize(
+        viewportId: string,
+        element: HTMLDivElement,
+        viewport: Types.IStackViewport,
+    ) {
         let resizeTimeout: NodeJS.Timeout | null = null;
 
-        const resizeObserver = new ResizeObserver(() => {
+        const observer = new ResizeObserver(() => {
             if (resizeTimeout) {
                 clearTimeout(resizeTimeout);
             }
 
             resizeTimeout = setTimeout(() => {
-                if (!this.renderingEngine || !viewport) return;
-
-                this.renderingEngine.resize(true, true);
+                this.renderingEngine?.resize(true, true);
                 viewport.setViewReference(viewport.getViewReference());
                 viewport.setViewPresentation(viewport.getViewPresentation());
-
                 resizeTimeout = null;
             }, 50);
         });
 
-        resizeObserver.observe(config.element);
-        this.resizeObservers.set(config.viewportId, resizeObserver);
-
-        await viewport.setStack(config.imageIds, config.defaultImageIndex || 0);
-        viewport.render();
-
-        return viewport;
-    }
-
-    public destroy(viewportId: string): void {
-        if (!this.renderingEngine) return;
-
-        const observer = this.resizeObservers.get(viewportId);
-        if (observer) {
-            observer.disconnect();
-            this.resizeObservers.delete(viewportId);
-        }
-
-        this.renderingEngine.disableElement(viewportId);
+        observer.observe(element);
+        this.resizeObservers.set(viewportId, observer);
     }
 }
