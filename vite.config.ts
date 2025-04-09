@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs';
 
@@ -9,10 +9,13 @@ export default defineConfig({
         exclude: ['@cornerstonejs/dicom-image-loader'],
         include: ['dicom-parser'],
     },
+    test: {
+        environment: 'jsdom',
+    },
     worker: {
         format: 'es',
         rollupOptions: {
             external: ['@icr/polyseg-wasm'],
         },
     },
-});
+} as UserConfig);
