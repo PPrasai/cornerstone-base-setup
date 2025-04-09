@@ -21,6 +21,13 @@ npm install
 npm run dev
 ```
 
+To run tests:
+
+```bash
+npm run test
+npm run coverage
+```
+
 ---
 
 ### ⚠️ dicomweb-client Compatibility Note
@@ -58,9 +65,9 @@ This setup includes additional configuration to support the Cornerstone3D ecosys
 #### 🔧 Vite Config Snippet (`vite.config.ts`)
 
 ```ts
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import viteCommonjs from '@originjs/vite-plugin-commonjs'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import viteCommonjs from '@originjs/vite-plugin-commonjs';
 
 export default defineConfig({
     plugins: [react(), viteCommonjs()],
@@ -74,7 +81,7 @@ export default defineConfig({
             external: ['@icr/polyseg-wasm'],
         },
     },
-})
+});
 ```
 
 ---

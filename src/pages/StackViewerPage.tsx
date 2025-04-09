@@ -66,6 +66,7 @@ function StackViewerPage(): React.JSX.Element {
                 {cornerstoneService ? (
                     <div
                         id={STACK_VIEWPORT_ID}
+                        data-testid={STACK_VIEWPORT_ID}
                         className="h-[70vh] w-[70vh] rounded-2xl bg-white shadow-lg"
                     ></div>
                 ) : (
