@@ -6,6 +6,7 @@ import {
     CornerstoneService,
     ViewerConfig,
 } from '../services/cornerstoneService';
+import InfoCard from '../components/InfoCard';
 
 const dicomParams: DicomQueryParams = {
     StudyInstanceUID:
@@ -49,19 +50,28 @@ function StackViewerPage(): React.JSX.Element {
             element,
             imageIds,
             defaultImageIndex: 10,
-            options: { background: [0.1, 0.1, 0.3] },
+            options: { background: [1, 1, 1] },
         });
 
         cornerstoneService.setupViewer(viewerConfig);
     }, [cornerstoneService, imageIds]);
 
     return (
-        <div className="flex flex-col items-center justify-center h-screen">
-            {cornerstoneService ? (
-                <div id={STACK_VIEWPORT_ID} className="h-[80vh] w-[80vw]"></div>
-            ) : (
-                <p>Loading...</p>
-            )}
+        <div className="w-full">
+            <InfoCard
+                title="Stack Viewer"
+                description="This is a stack viewer that displays a series of images in a stack format."
+            />
+            <div className="flex flex-col items-center justify-center mt-4">
+                {cornerstoneService ? (
+                    <div
+                        id={STACK_VIEWPORT_ID}
+                        className="h-[70vh] w-[70vh] rounded-2xl bg-white shadow-lg"
+                    ></div>
+                ) : (
+                    <p>Loading...</p>
+                )}
+            </div>
         </div>
     );
 }
