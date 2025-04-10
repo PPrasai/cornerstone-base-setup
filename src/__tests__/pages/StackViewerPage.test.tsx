@@ -6,7 +6,6 @@ import { describe, expect, it, vi } from 'vitest';
 import StackViewerPage from '../../pages/StackViewerPage';
 import { CornerstoneService } from '../../services/cornerstoneService';
 
-// Mock the services and functions used in the component
 vi.mock('../services/dicomService', () => ({
     fetchImageIds: vi.fn().mockResolvedValue(['image-id-1', 'image-id-2']),
 }));
@@ -60,16 +59,12 @@ describe('StackViewerPage', () => {
             </MemoryRouter>,
         );
 
-        // Wait for the "Loading..." text to disappear
         await waitFor(() =>
             expect(screen.queryByText('Loading...')).not.toBeInTheDocument(),
         );
 
-        // Now check if the stack viewport is rendered
         const stackViewport = screen.getByTestId('stack-viewport');
         expect(stackViewport).toBeInTheDocument();
-
-        // Optionally check if the cornerstone service setupViewer method was called
         expect(setupViewerSpy).toHaveBeenCalled();
     });
 });
