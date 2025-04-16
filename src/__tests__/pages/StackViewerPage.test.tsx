@@ -4,16 +4,14 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import StackViewerPage from '../../pages/StackViewerPage';
-import { CornerstoneService } from '../../services/cornerstoneService';
 
-vi.mock('../services/dicomService', () => ({
-    fetchImageIds: vi.fn().mockResolvedValue(['image-id-1', 'image-id-2']),
-}));
+const setupViewerMock = vi.fn().mockResolvedValue({});
+const destroyMock = vi.fn();
 
-vi.mock('../services/cornerstoneService', () => ({
+vi.mock('../../services/cornerstoneService', () => ({
     CornerstoneService: vi.fn().mockImplementation(() => ({
-        setupViewer: vi.fn(),
-        destroy: vi.fn(),
+        setupViewer: setupViewerMock,
+        destroy: destroyMock,
     })),
     createStackViewerConfig: vi.fn().mockReturnValue({}),
 }));
@@ -48,10 +46,6 @@ describe('StackViewerPage', () => {
         const mockElement = document.createElement('div');
         mockElement.setAttribute('id', 'stack-viewport');
         document.body.appendChild(mockElement);
-        const setupViewerSpy = vi.spyOn(
-            CornerstoneService.prototype,
-            'setupViewer',
-        );
 
         render(
             <MemoryRouter>
@@ -65,6 +59,7 @@ describe('StackViewerPage', () => {
 
         const stackViewport = screen.getByTestId('stack-viewport');
         expect(stackViewport).toBeInTheDocument();
-        expect(setupViewerSpy).toHaveBeenCalled();
+
+        expect(setupViewerMock).toHaveBeenCalled();
     });
 });

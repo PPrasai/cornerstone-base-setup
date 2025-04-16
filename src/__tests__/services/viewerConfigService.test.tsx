@@ -12,10 +12,12 @@ describe('createStackViewerConfig', () => {
             defaultImageIndex: 0,
         });
 
-        expect(config.viewportId).toBe('test-viewport');
+        expect(config.viewportIds.length).toBe(1);
+        expect(config.viewportIds[0]).toBe('test-viewport');
         expect(config.imageIds).toEqual(['img1', 'img2']);
         expect(config.defaultOptions).toEqual({ background: [0.2, 0, 0.2] });
-        expect(config.viewerType).toBe(Enums.ViewportType.STACK);
+        expect(config.viewerTypes.length).toBe(1);
+        expect(config.viewerTypes[0]).toBe(Enums.ViewportType.STACK);
         expect(config.tools).toBeInstanceOf(Array);
         expect(config.tools!.length).toBeGreaterThanOrEqual(1);
     });

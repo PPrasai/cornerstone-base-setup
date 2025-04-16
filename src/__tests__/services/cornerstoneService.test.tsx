@@ -68,9 +68,9 @@ describe('CornerstoneService', () => {
         service.renderingEngine = null;
 
         const mockConfig = {
-            viewportId: 'mock-viewport-id',
-            element: document.createElement('div'),
-            viewerType: Enums.ViewportType.STACK,
+            viewportIds: ['mock-viewport-id'],
+            elements: [document.createElement('div')],
+            viewerTypes: [Enums.ViewportType.STACK],
             imageIds: ['img1', 'img2'],
         };
 
@@ -81,74 +81,95 @@ describe('CornerstoneService', () => {
 
     it('should initialize the viewer successfully (happy path)', async () => {
         const mockConfig = {
-            viewportId: 'test-viewport',
-            element: document.createElement('div'),
-            viewerType: Enums.ViewportType.STACK,
+            viewportIds: ['test-viewport'],
+            elements: [document.createElement('div')],
+            viewerTypes: [Enums.ViewportType.STACK],
             imageIds: ['img1', 'img2'],
+            defaultOptions: {},
             defaultImageIndex: 0,
         };
 
-        // @ts-expect-error: mocking private method
-        service._initViewport = vi.fn().mockResolvedValue(mockViewport);
-
-        // @ts-expect-error: mocking private method
-        service._setupToolGroup = vi.fn();
-
-        // @ts-expect-error: mocking private method
-        service._observeResize = vi.fn();
+        // Use spyOn to override the private methods
+        const initViewportForSingleSpy = vi
+            .spyOn(service as any, '_initViewport')
+            .mockResolvedValue(mockViewport);
+        const setupToolGroupSpy = vi
+            .spyOn(service as any, '_setupToolGroup')
+            .mockImplementation(() => {});
+        const observeResizeSpy = vi
+            .spyOn(service as any, '_observeResize')
+            .mockImplementation(() => {});
         service.setViewportStack = vi.fn();
 
-        const viewport = await service.setupViewer(mockConfig);
+        const viewports = await service.setupViewer(mockConfig);
 
-        // @ts-expect-error: access private method
-        expect(service._initViewport).toHaveBeenCalledWith(mockConfig);
+        expect(initViewportForSingleSpy).toHaveBeenCalledTimes(
+            mockConfig.viewportIds.length,
+        );
 
-        // @ts-expect-error: access private method
-        expect(service._setupToolGroup).toHaveBeenCalledWith(
-            mockConfig,
+        // Verify that each viewport initialization was called with the correct parameters.
+        mockConfig.viewportIds.forEach((id, index) => {
+            expect(initViewportForSingleSpy).toHaveBeenCalledWith(
+                id,
+                mockConfig.elements[index],
+                mockConfig.viewerTypes[index],
+                mockConfig.defaultOptions, // defaultOptions should be passed, which is undefined in this test
+            );
+        });
+
+        // _setupToolGroup should be called once with the config and the array of viewports.
+        expect(setupToolGroupSpy).toHaveBeenCalledWith(mockConfig, [
             mockViewport,
-        );
+        ]);
 
-        // @ts-expect-error: access private method
-        expect(service._observeResize).toHaveBeenCalledWith(
-            mockConfig.viewportId,
-            mockConfig.element,
-            mockViewport,
-        );
+        // _observeResize should be called for each viewport.
+        mockConfig.viewportIds.forEach((id, index) => {
+            expect(observeResizeSpy).toHaveBeenCalledWith(
+                id,
+                mockConfig.elements[index],
+                mockViewport,
+            );
+        });
 
-        expect(service.setViewportStack).toHaveBeenCalledWith(
-            mockConfig.viewportId,
-            mockConfig.imageIds,
-            mockConfig.defaultImageIndex,
-        );
-        expect(viewport).toBe(mockViewport);
+        // setViewportStack should be invoked once per viewport.
+        mockConfig.viewportIds.forEach((id) => {
+            expect(service.setViewportStack).toHaveBeenCalledWith(
+                id,
+                mockConfig.imageIds,
+                mockConfig.defaultImageIndex,
+            );
+        });
+
+        expect(viewports).toEqual([mockViewport]);
     });
 
     it('should still work without defaultImageIndex', async () => {
         const mockConfig = {
-            viewportId: 'test-viewport',
-            element: document.createElement('div'),
-            viewerType: Enums.ViewportType.STACK,
+            viewportIds: ['test-viewport'],
+            elements: [document.createElement('div')],
+            viewerTypes: [Enums.ViewportType.STACK],
             imageIds: ['img1', 'img2'],
         };
 
+        // Mock the private methods
         // @ts-expect-error: mocking private method
         service._initViewport = vi.fn().mockResolvedValue(mockViewport);
-
         // @ts-expect-error: mocking private method
         service._setupToolGroup = vi.fn();
-
         // @ts-expect-error: mocking private method
         service._observeResize = vi.fn();
         service.setViewportStack = vi.fn();
 
         await service.setupViewer(mockConfig);
 
-        expect(service.setViewportStack).toHaveBeenCalledWith(
-            mockConfig.viewportId,
-            mockConfig.imageIds,
-            undefined,
-        );
+        // Verify that setViewportStack was called with undefined as the default image index
+        mockConfig.viewportIds.forEach((id) => {
+            expect(service.setViewportStack).toHaveBeenCalledWith(
+                id,
+                mockConfig.imageIds,
+                undefined,
+            );
+        });
     });
 
     it('should call setStack and render on the viewport if found', async () => {
@@ -160,13 +181,13 @@ describe('CornerstoneService', () => {
 
     it('should disconnect and remove the resize observer if it exists', () => {
         const mockObserver = { disconnect: vi.fn() };
-        // @ts-expect-error: access private field for testing purposes
+        // @ts-expect-error: accessing private property for testing purposes
         service.resizeObservers.set('test-viewport', mockObserver);
 
         service.destroy('test-viewport');
 
         expect(mockObserver.disconnect).toHaveBeenCalled();
-        // @ts-expect-error: accessing private property for test check
+        // @ts-expect-error: accessing private property for testing purposes
         expect(service.resizeObservers.has('test-viewport')).toBeFalsy();
         expect(mockRenderingEngine.disableElement).toHaveBeenCalledWith(
             'test-viewport',
@@ -176,7 +197,6 @@ describe('CornerstoneService', () => {
 
 describe('_setupToolGroup', () => {
     let service: CornerstoneService;
-    const mockViewport = { id: 'mock-viewport' } as any;
     const mockToolGroup = {
         addViewport: vi.fn(),
         addTool: vi.fn(),
@@ -194,7 +214,7 @@ describe('_setupToolGroup', () => {
         (ToolGroupManager.getToolGroup as any).mockReturnValue(mockToolGroup);
 
         const config = {
-            viewportId: 'testViewport',
+            viewportIds: ['testViewport'],
             tools: [
                 {
                     tool: 'LengthTool',
@@ -209,14 +229,15 @@ describe('_setupToolGroup', () => {
             ],
         };
 
-        // @ts-expect-error: access private method
-        service._setupToolGroup(config, mockViewport);
+        // Pass the viewports as an array.
+        // @ts-expect-error: accessing private method
+        service._setupToolGroup(config, [mockViewport]);
 
         expect(ToolGroupManager.getToolGroup).toHaveBeenCalledWith(
             'testViewport-group',
         );
         expect(mockToolGroup.addViewport).toHaveBeenCalledWith(
-            'mock-viewport',
+            'test-viewport',
             'mock-engine',
         );
         expect(addTool).toHaveBeenCalledWith('LengthTool');
@@ -235,18 +256,19 @@ describe('_setupToolGroup', () => {
         );
 
         const config = {
-            viewportId: 'newViewport',
+            viewportIds: ['newViewport'],
             tools: [],
         };
 
-        // @ts-expect-error: access private method
-        service._setupToolGroup(config, mockViewport);
+        // Pass viewports as an array
+        // @ts-expect-error: accessing private method
+        service._setupToolGroup(config, [mockViewport]);
 
         expect(ToolGroupManager.createToolGroup).toHaveBeenCalledWith(
             'newViewport-group',
         );
         expect(mockToolGroup.addViewport).toHaveBeenCalledWith(
-            'mock-viewport',
+            'test-viewport',
             'mock-engine',
         );
     });
@@ -255,14 +277,15 @@ describe('_setupToolGroup', () => {
         (ToolGroupManager.getToolGroup as any).mockReturnValue(mockToolGroup);
 
         const config = {
-            viewportId: 'emptyToolsViewport',
+            viewportIds: ['emptyToolsViewport'],
         };
 
-        // @ts-expect-error: access private method
-        service._setupToolGroup(config, mockViewport);
+        // Pass viewports as an array
+        // @ts-expect-error: accessing private method
+        service._setupToolGroup(config, [mockViewport]);
 
         expect(mockToolGroup.addViewport).toHaveBeenCalledWith(
-            'mock-viewport',
+            'test-viewport',
             'mock-engine',
         );
         expect(mockToolGroup.addTool).not.toHaveBeenCalled();
@@ -293,10 +316,10 @@ describe('_observeResize', () => {
         const element = document.createElement('div');
         const viewportId = 'test-viewport';
 
-        // @ts-expect-error: access private method
+        // @ts-expect-error: accessing private method
         service._observeResize(viewportId, element, mockViewport);
 
-        // @ts-expect-error: accessing private property
+        // @ts-expect-error: accessing private property for test check
         const observer = service.resizeObservers.get(viewportId);
         expect(observer).toBeDefined();
         expect(ResizeObserver).toHaveBeenCalled();
@@ -307,10 +330,10 @@ describe('_observeResize', () => {
         const element = document.createElement('div');
         const viewportId = 'test-viewport';
 
-        // @ts-expect-error: access private method
+        // @ts-expect-error: accessing private method
         service._observeResize(viewportId, element, mockViewport);
 
-        // @ts-expect-error: access private method
+        // @ts-expect-error: accessing private property for test check
         const observer = service.resizeObservers.get(viewportId);
         expect(observer).toBeDefined();
     });

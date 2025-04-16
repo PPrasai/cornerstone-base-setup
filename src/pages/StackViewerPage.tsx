@@ -2,11 +2,9 @@ import React, { useEffect, useState } from 'react';
 
 import { DicomQueryParams, fetchImageIds } from '../services/dicomService';
 import { createStackViewerConfig } from '../services/viewerConfigService';
-import {
-    CornerstoneService,
-    ViewerConfig,
-} from '../services/cornerstoneService';
+import { CornerstoneService } from '../services/cornerstoneService';
 import InfoCard from '../components/InfoCard';
+import { ViewerConfig } from '../domain/viewer/interfaces';
 
 const dicomParams: DicomQueryParams = {
     StudyInstanceUID:
