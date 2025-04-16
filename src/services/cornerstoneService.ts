@@ -91,8 +91,6 @@ export class CornerstoneService {
         if (!viewport) {
             throw new Error(`Viewport with ID ${viewportId} not found.`);
         }
-        // eslint-disable-next-line no-debugger
-        debugger;
         await viewport.setStack(imageIds, defaultImageIndex);
         viewport.render();
     }

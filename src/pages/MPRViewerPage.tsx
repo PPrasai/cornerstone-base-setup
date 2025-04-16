@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
 import { DicomQueryParams, fetchImageIds } from '../services/dicomService';
-import { createMPRViewerConfig } from '../services/viewerConfigService';
 import { CornerstoneService } from '../services/cornerstoneService';
-import InfoCard from '../components/InfoCard';
 import { ViewerConfig } from '../domain/viewer/interfaces';
+
+import ViewerConfigFactory from '../services/ViewerConfigFactory';
+import InfoCard from '../components/InfoCard';
+
+const configFactory = new ViewerConfigFactory({ background: [1, 1, 1] });
 
 const dicomParams: DicomQueryParams = {
     StudyInstanceUID:
@@ -56,7 +59,7 @@ function MPRViewerPage(): React.JSX.Element {
 
         if (!axialElement || !coronalElement || !sagittalElement) return;
 
-        const viewerConfig: ViewerConfig = createMPRViewerConfig({
+        const viewerConfig: ViewerConfig = configFactory.createMPRViewerConfig({
             viewportIds: [
                 AXIAL_VIEWPORT_ID,
                 CORONAL_VIEWPORT_ID,

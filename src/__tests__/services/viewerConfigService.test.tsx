@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Enums } from '@cornerstonejs/core';
-import { createStackViewerConfig } from '../../services/viewerConfigService';
+import { createStackViewerConfig } from '../../services/ViewerConfigFactory';
 
 describe('createStackViewerConfig', () => {
     it('should create a viewer config with the correct default background', () => {

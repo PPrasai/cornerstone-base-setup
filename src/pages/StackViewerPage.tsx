@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
 import { DicomQueryParams, fetchImageIds } from '../services/dicomService';
-import { createStackViewerConfig } from '../services/viewerConfigService';
 import { CornerstoneService } from '../services/cornerstoneService';
-import InfoCard from '../components/InfoCard';
 import { ViewerConfig } from '../domain/viewer/interfaces';
+
+import ViewerConfigFactory from '../services/ViewerConfigFactory';
+import InfoCard from '../components/InfoCard';
+
+const configFactory = new ViewerConfigFactory({ background: [1, 1, 1] });
 
 const dicomParams: DicomQueryParams = {
     StudyInstanceUID:
@@ -43,13 +46,14 @@ function StackViewerPage(): React.JSX.Element {
         ) as HTMLDivElement;
         if (!element) return;
 
-        const viewerConfig: ViewerConfig = createStackViewerConfig({
-            viewportId: STACK_VIEWPORT_ID,
-            element,
-            imageIds,
-            defaultImageIndex: 10,
-            options: { background: [1, 1, 1] },
-        });
+        const viewerConfig: ViewerConfig =
+            configFactory.createStackViewerConfig({
+                viewportId: STACK_VIEWPORT_ID,
+                element,
+                imageIds,
+                defaultImageIndex: 10,
+                options: { background: [1, 1, 1] },
+            });
 
         cornerstoneService.setupViewer(viewerConfig);
     }, [cornerstoneService, imageIds]);
