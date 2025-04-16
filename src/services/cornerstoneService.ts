@@ -1,5 +1,5 @@
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
-import { init, RenderingEngine, Types } from '@cornerstonejs/core';
+import { Enums, init, RenderingEngine, Types } from '@cornerstonejs/core';
 import {
     init as toolsInit,
     addTool,
@@ -21,21 +21,45 @@ export class CornerstoneService {
 
     public async setupViewer(
         config: ViewerConfig,
-    ): Promise<Types.IStackViewport> {
+    ): Promise<Types.IStackViewport[]> {
         if (!this.renderingEngine) {
             throw new Error('Rendering engine is not initialized.');
         }
 
-        const viewport = await this._initViewport(config);
-        this._setupToolGroup(config, viewport);
-        this._observeResize(config.viewportId, config.element, viewport);
-
-        await this.setViewportStack(
-            config.viewportId,
-            config.imageIds,
-            config.defaultImageIndex,
+        const viewports: Types.IStackViewport[] = await Promise.all(
+            config.viewportIds.map((viewportId, index) => {
+                const element = config.elements[index];
+                const viewerType = config.viewerTypes[index];
+                return this._initViewport(
+                    viewportId,
+                    element,
+                    viewerType,
+                    config.defaultOptions,
+                );
+            }),
         );
-        return viewport;
+
+        this._setupToolGroup(config, viewports);
+
+        config.viewportIds.forEach((viewportId, index) => {
+            this._observeResize(
+                viewportId,
+                config.elements[index],
+                viewports[index],
+            );
+        });
+
+        await Promise.all(
+            config.viewportIds.map((viewportId) =>
+                this.setViewportStack(
+                    viewportId,
+                    config.imageIds,
+                    config.defaultImageIndex,
+                ),
+            ),
+        );
+
+        return viewports;
     }
 
     public async setViewportStack(
@@ -47,8 +71,9 @@ export class CornerstoneService {
             viewportId,
         ) as Types.IStackViewport;
 
-        if (!viewport)
+        if (!viewport) {
             throw new Error(`Viewport with ID ${viewportId} not found.`);
+        }
 
         await viewport.setStack(imageIds, defaultImageIndex);
         viewport.render();
@@ -65,17 +90,16 @@ export class CornerstoneService {
     }
 
     private async _initViewport(
-        config: ViewerConfig,
+        viewportId: string,
+        element: HTMLDivElement,
+        viewerType: Enums.ViewportType,
+        defaultOptions?: Types.ViewportInputOptions,
     ): Promise<Types.IStackViewport> {
-        const { viewportId, element, viewerType, defaultOptions } = config;
-
         const viewportInput: Types.PublicViewportInput = {
             viewportId,
             element,
             type: viewerType,
-            defaultOptions: defaultOptions || {
-                background: [0.2, 0, 0.2],
-            },
+            defaultOptions: defaultOptions || { background: [0.2, 0, 0.2] },
         };
 
         element.oncontextmenu = (e) => e.preventDefault();
@@ -91,16 +115,18 @@ export class CornerstoneService {
 
     private _setupToolGroup(
         config: ViewerConfig,
-        viewport: Types.IStackViewport,
+        viewports: Types.IStackViewport[],
     ) {
-        const toolGroupId = `${config.viewportId}-group`;
+        const toolGroupId = `${config.viewportIds.join('-')}-group`;
         let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
         if (!toolGroup) {
             toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
         }
 
-        toolGroup!.addViewport(viewport.id, this.renderingEngine!.id);
+        viewports.forEach((vp) => {
+            toolGroup!.addViewport(vp.id, this.renderingEngine!.id);
+        });
 
         config.tools?.forEach((toolConfig) => {
             addTool(toolConfig.tool);

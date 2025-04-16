@@ -9,9 +9,9 @@ export interface ToolConfiguration {
 }
 
 export interface ViewerConfig {
-    viewportId: string;
-    element: HTMLDivElement;
-    viewerType: Enums.ViewportType;
+    viewportIds: string[];
+    elements: HTMLDivElement[];
+    viewerTypes: Enums.ViewportType[];
     imageIds: string[];
     defaultImageIndex?: number;
     defaultOptions?: CoreTypes.ViewportInputOptions;
@@ -23,6 +23,15 @@ export interface StackViewerConfig {
     element: HTMLDivElement;
     imageIds: string[];
     defaultImageIndex?: number;
+    options?: {
+        background?: CoreTypes.Point3;
+    };
+}
+
+export interface MPRViewerConfig {
+    viewportIds: string[];
+    elements: HTMLDivElement[];
+    imageIds: string[];
     options?: {
         background?: CoreTypes.Point3;
     };

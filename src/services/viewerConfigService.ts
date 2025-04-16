@@ -49,10 +49,10 @@ export function createStackViewerConfig(
     ];
 
     return {
-        viewportId: config.viewportId,
-        element: config.element,
+        viewportIds: [config.viewportId],
+        elements: [config.element],
         defaultImageIndex: config.defaultImageIndex,
-        viewerType: ViewportType.STACK,
+        viewerTypes: [ViewportType.STACK],
         imageIds: config.imageIds,
         defaultOptions: { background },
         tools,
