@@ -31,23 +31,24 @@ export class CornerstoneService {
 
     public async setupViewer(
         config: ViewerConfig,
-    ): Promise<Types.IStackViewport[]> {
+    ): Promise<Array<Types.IStackViewport | Types.IVolumeViewport>> {
         if (!this.renderingEngine) {
             throw new Error('Rendering engine is not initialized.');
         }
 
-        const viewports: Types.IStackViewport[] = await Promise.all(
-            config.viewportIds.map((viewportId, index) => {
-                const element = config.elements[index];
-                const viewerType = config.viewerTypes[index];
-                return this._initViewport(
-                    viewportId,
-                    element,
-                    viewerType,
-                    config.defaultOptions,
-                );
-            }),
-        );
+        const viewports: Array<Types.IStackViewport | Types.IVolumeViewport> =
+            await Promise.all(
+                config.viewportIds.map((viewportId, index) => {
+                    const element = config.elements[index];
+                    const viewerType = config.viewerTypes[index];
+                    return this._initViewport(
+                        viewportId,
+                        element,
+                        viewerType,
+                        config.defaultOptions,
+                    );
+                }),
+            );
 
         this._setupToolGroup(config, viewports);
 
@@ -106,6 +107,7 @@ export class CornerstoneService {
 
         const volume = await volumeLoader.createAndCacheVolume(volumeId, {
             imageIds: config.imageIds,
+            progressiveRendering: false,
         });
 
         const viewportInputs = [
@@ -206,7 +208,7 @@ export class CornerstoneService {
 
     private _setupToolGroup(
         config: ViewerConfig,
-        viewports: Types.IStackViewport[],
+        viewports: Array<Types.IStackViewport | Types.IVolumeViewport>,
     ) {
         const toolGroupId = `${config.viewportIds.join('-')}-group`;
         let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -233,7 +235,7 @@ export class CornerstoneService {
     private _observeResize(
         viewportId: string,
         element: HTMLDivElement,
-        viewport: Types.IStackViewport,
+        viewport: Types.IStackViewport | Types.IVolumeViewport,
     ) {
         let resizeTimeout: NodeJS.Timeout | null = null;
 
