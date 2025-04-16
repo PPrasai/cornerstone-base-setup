@@ -98,9 +98,9 @@ export function createMPRViewerConfig(config: MPRViewerConfig): ViewerConfig {
         elements: config.elements,
         defaultImageIndex: 0,
         viewerTypes: [
-            ViewportType.STACK,
-            ViewportType.STACK,
-            ViewportType.STACK,
+            ViewportType.ORTHOGRAPHIC,
+            ViewportType.ORTHOGRAPHIC,
+            ViewportType.ORTHOGRAPHIC,
         ],
         imageIds: config.imageIds,
         defaultOptions: {
