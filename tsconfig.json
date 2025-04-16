@@ -7,5 +7,10 @@
     "compilerOptions": {
         "types": ["vitest/globals", "@testing-library/jest-dom"]
     },
-    "include": ["src", "vitest.setup.ts", "tests", "**/*.test.tsx"]
+    "include": [
+        "src",
+        "src/__tests__/vitest.setup.tsitest.setup.ts",
+        "tests",
+        "**/*.test.tsx"
+    ]
 }

@@ -1,5 +1,4 @@
 /* eslint-disable react/react-in-jsx-scope */
-import '@testing-library/jest-dom';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import InfoCard from '../../components/InfoCard';

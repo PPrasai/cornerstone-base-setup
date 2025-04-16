@@ -1,8 +1,7 @@
-import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import StackViewerPage from '../../pages/StackViewerPage';
 
 const setupViewerMock = vi.fn().mockResolvedValue({});
@@ -17,13 +16,15 @@ vi.mock('../../services/cornerstoneService', () => ({
 }));
 
 describe('StackViewerPage', () => {
-    it('renders InfoCard with correct title and description', () => {
+    beforeEach(() => {
         render(
             <MemoryRouter>
                 <StackViewerPage />
             </MemoryRouter>,
         );
+    });
 
+    it('renders InfoCard with correct title and description', () => {
         expect(screen.getByText('Stack Viewer')).toBeInTheDocument();
         expect(
             screen.getByText(
@@ -33,12 +34,6 @@ describe('StackViewerPage', () => {
     });
 
     it('displays loading text when cornerstoneService is not available', () => {
-        render(
-            <MemoryRouter>
-                <StackViewerPage />
-            </MemoryRouter>,
-        );
-
         expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
 
@@ -46,12 +41,6 @@ describe('StackViewerPage', () => {
         const mockElement = document.createElement('div');
         mockElement.setAttribute('id', 'stack-viewport');
         document.body.appendChild(mockElement);
-
-        render(
-            <MemoryRouter>
-                <StackViewerPage />
-            </MemoryRouter>,
-        );
 
         await waitFor(() =>
             expect(screen.queryByText('Loading...')).not.toBeInTheDocument(),

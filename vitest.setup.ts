@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import '@testing-library/jest-dom';
 
 if (typeof (global as any).Worker === 'undefined') {
     (global as any).Worker = class {
