@@ -1,28 +1,12 @@
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
-import { init, RenderingEngine, Enums, Types } from '@cornerstonejs/core';
+import { init, RenderingEngine, Types } from '@cornerstonejs/core';
 import {
     init as toolsInit,
     addTool,
     ToolGroupManager,
-    Types as ToolTypes,
 } from '@cornerstonejs/tools';
 
-export interface ToolConfiguration {
-    tool: unknown;
-    toolName: string;
-    active?: boolean;
-    bindings?: ToolTypes.IToolBinding[];
-}
-
-export interface ViewerConfig {
-    viewportId: string;
-    element: HTMLDivElement;
-    viewerType: Enums.ViewportType;
-    imageIds: string[];
-    defaultImageIndex?: number;
-    defaultOptions?: Types.ViewportInputOptions;
-    tools?: ToolConfiguration[];
-}
+import { ViewerConfig } from '../domain/viewer/interfaces';
 
 export class CornerstoneService {
     private renderingEngine: RenderingEngine | null = null;

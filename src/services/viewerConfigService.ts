@@ -1,4 +1,4 @@
-import { Enums, Types } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 import {
     StackScrollTool,
     LengthTool,
@@ -6,20 +6,15 @@ import {
     PanTool,
     ZoomTool,
 } from '@cornerstonejs/tools';
-import { ToolConfiguration, ViewerConfig } from './cornerstoneService';
+
+import {
+    StackViewerConfig,
+    ToolConfiguration,
+    ViewerConfig,
+} from '../domain/viewer/interfaces';
 
 const { ViewportType } = Enums;
 const { MouseBindings } = ToolEnums;
-
-interface StackViewerConfig {
-    viewportId: string;
-    element: HTMLDivElement;
-    imageIds: string[];
-    defaultImageIndex?: number;
-    options?: {
-        background?: Types.Point3;
-    };
-}
 
 export function createStackViewerConfig(
     config: StackViewerConfig,
