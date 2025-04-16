@@ -15,7 +15,9 @@ describe('createStackViewerConfig', () => {
         expect(config.viewportIds.length).toBe(1);
         expect(config.viewportIds[0]).toBe('test-viewport');
         expect(config.imageIds).toEqual(['img1', 'img2']);
-        expect(config.defaultOptions).toEqual({ background: [0.2, 0, 0.2] });
+        expect(config.defaultOptions![config.viewportIds[0]]).toEqual({
+            background: [0.2, 0, 0.2],
+        });
         expect(config.viewerTypes.length).toBe(1);
         expect(config.viewerTypes[0]).toBe(Enums.ViewportType.STACK);
         expect(config.tools).toBeInstanceOf(Array);
@@ -31,6 +33,8 @@ describe('createStackViewerConfig', () => {
             options: { background: [0.1, 0.1, 0.3] },
         });
 
-        expect(config.defaultOptions).toEqual({ background: [0.1, 0.1, 0.3] });
+        expect(config.defaultOptions![config.viewportIds[0]]).toEqual({
+            background: [0.1, 0.1, 0.3],
+        });
     });
 });
