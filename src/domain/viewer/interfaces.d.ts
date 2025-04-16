@@ -1,6 +1,11 @@
 import { Types as CoreTypes, Enums } from '@cornerstonejs/core';
 import { Types as ToolTypes } from '@cornerstonejs/tools';
 
+export enum ViewerTypes {
+    STACK = 'stack',
+    MPR = 'MPR',
+}
+
 export interface ToolConfiguration {
     tool: unknown;
     toolName: string;
@@ -9,12 +14,13 @@ export interface ToolConfiguration {
 }
 
 export interface ViewerConfig {
+    viewerType: ViewerTypes;
     viewportIds: string[];
     elements: HTMLDivElement[];
     viewerTypes: Enums.ViewportType[];
     imageIds: string[];
     defaultImageIndex?: number;
-    defaultOptions?: CoreTypes.ViewportInputOptions;
+    defaultOptions?: Record<string, CoreTypes.ViewportInputOptions>;
     tools?: ToolConfiguration[];
 }
 

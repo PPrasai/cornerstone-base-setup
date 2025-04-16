@@ -60,7 +60,7 @@ function StackViewerPage(): React.JSX.Element {
                 title="Stack Viewer"
                 description="This is a stack viewer that displays a series of images in a stack format."
             />
-            <div className="flex flex-col items-center justify-center mt-4">
+            <div className="flex items-center justify-center mt-4">
                 {cornerstoneService ? (
                     <div
                         id={STACK_VIEWPORT_ID}
