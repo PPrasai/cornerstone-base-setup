@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { DicomQueryParams, fetchImageIds } from '../services/dicomService';
 import { CornerstoneService } from '../services/cornerstoneService';
@@ -25,18 +25,20 @@ function MPRViewerPage(): React.JSX.Element {
     const [cornerstoneService, setCornerstoneService] =
         useState<CornerstoneService | null>(null);
     const [imageIds, setImageIds] = useState<string[]>([]);
+    const cornerstoneServiceRef = useRef<CornerstoneService | null>(null);
 
     useEffect(() => {
         async function initialize() {
             const ids = await fetchImageIds(dicomParams);
             const service = new CornerstoneService();
             setImageIds(ids);
+            cornerstoneServiceRef.current = service;
             setCornerstoneService(service);
         }
         initialize();
 
         return () => {
-            cornerstoneService?.cleanup([
+            cornerstoneServiceRef.current?.cleanup([
                 AXIAL_VIEWPORT_ID,
                 CORONAL_VIEWPORT_ID,
                 SAGITTAL_VIEWPORT_ID,
