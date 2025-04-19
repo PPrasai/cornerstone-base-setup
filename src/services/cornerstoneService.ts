@@ -23,7 +23,7 @@ export class CornerstoneService {
     constructor(engineId = 'cornerstone-engine') {
         coreInit();
         cornerstoneDICOMImageLoader.init();
-        this.registerVolumeLoaders();
+        this._registerVolumeLoaders();
         toolsInit();
         this.renderingEngine = new RenderingEngine(engineId);
     }
@@ -32,14 +32,14 @@ export class CornerstoneService {
         config: ViewerConfig,
     ): Promise<Array<Types.IStackViewport | Types.IVolumeViewport>> {
         return config.viewerType === ViewerTypes.STACK
-            ? this.setupStackViewer(config)
-            : this.setupMPRViewer(config);
+            ? this._setupStackViewer(config)
+            : this._setupMPRViewer(config);
     }
 
-    private async setupStackViewer(
+    private async _setupStackViewer(
         config: ViewerConfig,
     ): Promise<Types.IStackViewport[]> {
-        const viewport = (await this.initViewport(
+        const viewport = (await this._initViewport(
             config.viewportIds[0],
             config.elements[0],
             config.viewerTypes[0],
@@ -49,19 +49,23 @@ export class CornerstoneService {
         await viewport.setStack(config.imageIds, config.defaultImageIndex ?? 0);
         viewport.render();
 
-        this.applyTools(config.viewportIds, [viewport], config.tools);
-        this.observeResize(config.viewportIds[0], config.elements[0], viewport);
+        this._applyTools(config.viewportIds, [viewport], config.tools);
+        this._observeResize(
+            config.viewportIds[0],
+            config.elements[0],
+            viewport,
+        );
 
         return [viewport];
     }
 
-    private async setupMPRViewer(
+    private async _setupMPRViewer(
         config: ViewerConfig,
     ): Promise<Types.IVolumeViewport[]> {
         const viewports = (await Promise.all(
             config.viewportIds.map(
                 (id, idx) =>
-                    this.initViewport(
+                    this._initViewport(
                         id,
                         config.elements[idx],
                         config.viewerTypes[idx],
@@ -106,15 +110,15 @@ export class CornerstoneService {
             }),
         );
 
-        this.applyTools(config.viewportIds, viewports, config.tools);
+        this._applyTools(config.viewportIds, viewports, config.tools);
         config.viewportIds.forEach((id, idx) => {
-            this.observeResize(id, config.elements[idx], viewports[idx]);
+            this._observeResize(id, config.elements[idx], viewports[idx]);
         });
 
         return viewports;
     }
 
-    private async initViewport(
+    private async _initViewport(
         viewportId: string,
         element: HTMLDivElement,
         type: Enums.ViewportType,
@@ -133,7 +137,7 @@ export class CornerstoneService {
         return this.renderingEngine.getViewport(viewportId)!;
     }
 
-    private registerVolumeLoaders() {
+    private _registerVolumeLoaders() {
         volumeLoader.registerUnknownVolumeLoader(
             cornerstoneStreamingImageVolumeLoader as unknown as Types.VolumeLoaderFn,
         );
@@ -147,7 +151,7 @@ export class CornerstoneService {
         );
     }
 
-    private applyTools(
+    private _applyTools(
         viewportIds: string[],
         viewports: Array<Types.IViewport>,
         toolsConfig?: ViewerConfig['tools'],
@@ -170,7 +174,7 @@ export class CornerstoneService {
         });
     }
 
-    private observeResize(
+    private _observeResize(
         viewportId: string,
         element: HTMLDivElement,
         viewport: Types.IViewport,
