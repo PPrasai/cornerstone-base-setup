@@ -87,28 +87,18 @@ export class CornerstoneService {
                 viewportId: vp.id,
                 element: vp.element,
                 type: vp.type,
-                defaultOptions: {},
+                defaultOptions: config.defaultOptions?.[vp.id],
             })),
         );
+
         volume.load();
         await setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId }],
             config.viewportIds,
         );
-        this.renderingEngine.renderViewports(config.viewportIds);
 
-        await Promise.all(
-            viewports.map((vp, idx) => {
-                const orientation = [
-                    Enums.OrientationAxis.AXIAL,
-                    Enums.OrientationAxis.SAGITTAL,
-                    Enums.OrientationAxis.CORONAL,
-                ][idx];
-                vp.setOrientation(orientation);
-                vp.render();
-            }),
-        );
+        this.renderingEngine.renderViewports(config.viewportIds);
 
         this._applyTools(config.viewportIds, viewports, config.tools);
         config.viewportIds.forEach((id, idx) => {
