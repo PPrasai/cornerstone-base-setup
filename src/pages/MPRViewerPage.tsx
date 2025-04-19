@@ -36,9 +36,11 @@ function MPRViewerPage(): React.JSX.Element {
         initialize();
 
         return () => {
-            cornerstoneService?.destroy(AXIAL_VIEWPORT_ID);
-            cornerstoneService?.destroy(CORONAL_VIEWPORT_ID);
-            cornerstoneService?.destroy(SAGITTAL_VIEWPORT_ID);
+            cornerstoneService?.cleanup([
+                AXIAL_VIEWPORT_ID,
+                CORONAL_VIEWPORT_ID,
+                SAGITTAL_VIEWPORT_ID,
+            ]);
         };
     }, []);
 

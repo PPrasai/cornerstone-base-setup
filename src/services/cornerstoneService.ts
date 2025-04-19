@@ -191,4 +191,21 @@ export class CornerstoneService {
         observer.observe(element);
         this.resizeObservers.set(viewportId, observer);
     }
+
+    public cleanup(viewportIds: string[]): void {
+        viewportIds.forEach((id) => {
+            const observer = this.resizeObservers.get(id);
+            if (observer) {
+                observer.disconnect();
+                this.resizeObservers.delete(id);
+            }
+            this.renderingEngine.disableElement(id);
+        });
+        const toolGroupId = viewportIds.join('-') + '-tools';
+        const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+        if (toolGroup) {
+            ToolGroupManager.destroyToolGroup(toolGroupId);
+        }
+        this.renderingEngine.destroy();
+    }
 }
