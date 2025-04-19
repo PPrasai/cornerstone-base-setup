@@ -3,7 +3,7 @@ import {
     cornerstoneStreamingDynamicImageVolumeLoader,
     cornerstoneStreamingImageVolumeLoader,
     Enums,
-    init,
+    init as coreInit,
     RenderingEngine,
     setVolumesForViewports,
     Types,
@@ -14,247 +14,126 @@ import {
     addTool,
     ToolGroupManager,
 } from '@cornerstonejs/tools';
-
 import { ViewerConfig, ViewerTypes } from '../domain/viewer/interfaces.d';
 
 export class CornerstoneService {
-    private renderingEngine: RenderingEngine | null = null;
-    private resizeObservers: Map<string, ResizeObserver> = new Map();
+    private renderingEngine: RenderingEngine;
+    private resizeObservers = new Map<string, ResizeObserver>();
 
-    constructor(renderingEngineId = 'unnamed-engine') {
-        this._initVolumeLoader();
-        init();
+    constructor(engineId = 'cornerstone-engine') {
+        coreInit();
         cornerstoneDICOMImageLoader.init();
+        this.registerVolumeLoaders();
         toolsInit();
-        this.renderingEngine = new RenderingEngine(renderingEngineId);
+        this.renderingEngine = new RenderingEngine(engineId);
     }
 
     public async setupViewer(
         config: ViewerConfig,
     ): Promise<Array<Types.IStackViewport | Types.IVolumeViewport>> {
-        if (!this.renderingEngine) {
-            throw new Error('Rendering engine is not initialized.');
-        }
-
-        const viewports: Array<Types.IStackViewport | Types.IVolumeViewport> =
-            await Promise.all(
-                config.viewportIds.map((viewportId, index) => {
-                    const element = config.elements[index];
-                    const viewerType = config.viewerTypes[index];
-                    return this._initViewport(
-                        viewportId,
-                        element,
-                        viewerType,
-                        config.defaultOptions,
-                    );
-                }),
-            );
-
-        this._setupToolGroup(config, viewports);
-
-        config.viewportIds.forEach((viewportId, index) => {
-            this._observeResize(
-                viewportId,
-                config.elements[index],
-                viewports[index],
-            );
-        });
-
-        if (config.viewerType === ViewerTypes.STACK)
-            await Promise.all(
-                config.viewportIds.map((viewportId) =>
-                    this.setViewportStack(
-                        viewportId,
-                        config.imageIds,
-                        config.defaultImageIndex,
-                    ),
-                ),
-            );
-
-        if (config.viewerType === ViewerTypes.MPR)
-            await Promise.all(
-                config.viewportIds.map(() => this.setMPRViewports(config)),
-            );
-
-        return viewports;
+        return config.viewerType === ViewerTypes.STACK
+            ? this.setupStackViewer(config)
+            : this.setupMPRViewer(config);
     }
 
-    public async setViewportStack(
-        viewportId: string,
-        imageIds: string[],
-        defaultImageIndex = 0,
-    ): Promise<void> {
-        const viewport = this.renderingEngine?.getViewport(
-            viewportId,
-        ) as Types.IStackViewport;
+    private async setupStackViewer(
+        config: ViewerConfig,
+    ): Promise<Types.IStackViewport[]> {
+        const viewport = (await this.initViewport(
+            config.viewportIds[0],
+            config.elements[0],
+            config.viewerTypes[0],
+            config.defaultOptions?.[config.viewportIds[0]],
+        )) as Types.IStackViewport;
 
-        if (!viewport) {
-            throw new Error(`Viewport with ID ${viewportId} not found.`);
-        }
-        await viewport.setStack(imageIds, defaultImageIndex);
+        await viewport.setStack(config.imageIds, config.defaultImageIndex ?? 0);
         viewport.render();
+
+        this.applyTools(config.viewportIds, [viewport], config.tools);
+        this.observeResize(config.viewportIds[0], config.elements[0], viewport);
+
+        return [viewport];
     }
 
-    public async setMPRViewports(config: ViewerConfig) {
-        if (!this.renderingEngine)
-            throw new Error('Rendering engine is not initialized.');
+    private async setupMPRViewer(
+        config: ViewerConfig,
+    ): Promise<Types.IVolumeViewport[]> {
+        const viewports = (await Promise.all(
+            config.viewportIds.map(
+                (id, idx) =>
+                    this.initViewport(
+                        id,
+                        config.elements[idx],
+                        config.viewerTypes[idx],
+                        config.defaultOptions?.[id],
+                    ) as Promise<Types.IVolumeViewport>,
+            ),
+        )) as Types.IVolumeViewport[];
 
         const volumeName = 'CT_VOLUME_ID';
-        const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-        const volumeId = `${volumeLoaderScheme}:${volumeName}`;
-
+        const loaderScheme = 'cornerstoneStreamingImageVolume';
+        const volumeId = `${loaderScheme}:${volumeName}`;
         const volume = await volumeLoader.createAndCacheVolume(volumeId, {
             imageIds: config.imageIds,
             progressiveRendering: false,
         });
 
-        const viewportInputs = [
-            {
-                viewportId: config.viewportIds[0],
-                type: config.viewerTypes[0],
-                element: config.elements[0],
-                defaultOptions: config.defaultOptions
-                    ? config.defaultOptions[config.viewportIds[0]]
-                    : {},
-            },
-            {
-                viewportId: config.viewportIds[1],
-                type: config.viewerTypes[1],
-                element: config.elements[1],
-                defaultOptions: config.defaultOptions
-                    ? config.defaultOptions[config.viewportIds[1]]
-                    : {},
-            },
-            {
-                viewportId: config.viewportIds[2],
-                type: config.viewerTypes[2],
-                element: config.elements[2],
-                defaultOptions: config.defaultOptions
-                    ? config.defaultOptions[config.viewportIds[2]]
-                    : {},
-            },
-        ];
-
-        this.renderingEngine.setViewports(viewportInputs);
+        this.renderingEngine.setViewports(
+            viewports.map((vp) => ({
+                viewportId: vp.id,
+                element: vp.element,
+                type: vp.type,
+                defaultOptions: {},
+            })),
+        );
         volume.load();
-
-        const windowWidth = 400;
-        const windowCenter = 40;
-
-        const lower = windowCenter - windowWidth / 2.0;
-        const upper = windowCenter + windowWidth / 2.0;
-
-        function setCtTransferFunctionForVolumeActor({
-            volumeActor,
-        }: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            volumeActor: any;
-        }) {
-            volumeActor
-                .getProperty()
-                .getRGBTransferFunction(0)
-                .setMappingRange(lower, upper);
-        }
-
         await setVolumesForViewports(
             this.renderingEngine,
-            [
-                {
-                    volumeId,
-                    callback: setCtTransferFunctionForVolumeActor,
-                },
-            ],
+            [{ volumeId }],
             config.viewportIds,
         );
-
         this.renderingEngine.renderViewports(config.viewportIds);
+
+        await Promise.all(
+            viewports.map((vp, idx) => {
+                const orientation = [
+                    Enums.OrientationAxis.AXIAL,
+                    Enums.OrientationAxis.SAGITTAL,
+                    Enums.OrientationAxis.CORONAL,
+                ][idx];
+                vp.setOrientation(orientation);
+                vp.render();
+            }),
+        );
+
+        this.applyTools(config.viewportIds, viewports, config.tools);
+        config.viewportIds.forEach((id, idx) => {
+            this.observeResize(id, config.elements[idx], viewports[idx]);
+        });
+
+        return viewports;
     }
 
-    public destroy(viewportId: string): void {
-        const observer = this.resizeObservers.get(viewportId);
-        if (observer) {
-            observer.disconnect();
-            this.resizeObservers.delete(viewportId);
-        }
-
-        this.renderingEngine?.disableElement(viewportId);
-    }
-
-    private async _initViewport(
+    private async initViewport(
         viewportId: string,
         element: HTMLDivElement,
-        viewerType: Enums.ViewportType,
+        type: Enums.ViewportType,
         defaultOptions?: Types.ViewportInputOptions,
-    ): Promise<Types.IStackViewport> {
-        const viewportInput: Types.PublicViewportInput = {
+    ): Promise<Types.IViewport> {
+        const input: Types.PublicViewportInput = {
             viewportId,
             element,
-            type: viewerType,
-            defaultOptions: defaultOptions || { background: [0.2, 0, 0.2] },
+            type,
+            defaultOptions: defaultOptions ?? { background: [0.2, 0, 0.2] },
         };
-
         element.oncontextmenu = (e) => e.preventDefault();
-
-        if (!this.renderingEngine!.getViewport(viewportId)) {
-            this.renderingEngine!.enableElement(viewportInput);
+        if (!this.renderingEngine.getViewport(viewportId)) {
+            this.renderingEngine.enableElement(input);
         }
-
-        return this.renderingEngine!.getViewport(
-            viewportId,
-        ) as Types.IStackViewport;
+        return this.renderingEngine.getViewport(viewportId)!;
     }
 
-    private _setupToolGroup(
-        config: ViewerConfig,
-        viewports: Array<Types.IStackViewport | Types.IVolumeViewport>,
-    ) {
-        const toolGroupId = `${config.viewportIds.join('-')}-group`;
-        let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-        if (!toolGroup) {
-            toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-        }
-
-        viewports.forEach((vp) => {
-            toolGroup!.addViewport(vp.id, this.renderingEngine!.id);
-        });
-
-        config.tools?.forEach((toolConfig) => {
-            addTool(toolConfig.tool);
-            toolGroup!.addTool(toolConfig.toolName);
-            if (toolConfig.active && toolConfig.bindings) {
-                toolGroup!.setToolActive(toolConfig.toolName, {
-                    bindings: toolConfig.bindings,
-                });
-            }
-        });
-    }
-
-    private _observeResize(
-        viewportId: string,
-        element: HTMLDivElement,
-        viewport: Types.IStackViewport | Types.IVolumeViewport,
-    ) {
-        let resizeTimeout: NodeJS.Timeout | null = null;
-
-        const observer = new ResizeObserver(() => {
-            if (resizeTimeout) {
-                clearTimeout(resizeTimeout);
-            }
-
-            resizeTimeout = setTimeout(() => {
-                this.renderingEngine?.resize(true, true);
-                viewport.setViewReference(viewport.getViewReference());
-                viewport.setViewPresentation(viewport.getViewPresentation());
-                resizeTimeout = null;
-            }, 50);
-        });
-
-        observer.observe(element);
-        this.resizeObservers.set(viewportId, observer);
-    }
-
-    private _initVolumeLoader() {
+    private registerVolumeLoaders() {
         volumeLoader.registerUnknownVolumeLoader(
             cornerstoneStreamingImageVolumeLoader as unknown as Types.VolumeLoaderFn,
         );
@@ -266,5 +145,46 @@ export class CornerstoneService {
             'cornerstoneStreamingDynamicImageVolume',
             cornerstoneStreamingDynamicImageVolumeLoader as unknown as Types.VolumeLoaderFn,
         );
+    }
+
+    private applyTools(
+        viewportIds: string[],
+        viewports: Array<Types.IViewport>,
+        toolsConfig?: ViewerConfig['tools'],
+    ): void {
+        const groupId = viewportIds.join('-') + '-tools';
+        const toolGroup =
+            ToolGroupManager.getToolGroup(groupId) ??
+            ToolGroupManager.createToolGroup(groupId);
+        viewports.forEach((vp) =>
+            toolGroup!.addViewport(vp.id, this.renderingEngine.id),
+        );
+        toolsConfig?.forEach((cfg) => {
+            addTool(cfg.tool);
+            toolGroup!.addTool(cfg.toolName);
+            if (cfg.active && cfg.bindings) {
+                toolGroup!.setToolActive(cfg.toolName, {
+                    bindings: cfg.bindings,
+                });
+            }
+        });
+    }
+
+    private observeResize(
+        viewportId: string,
+        element: HTMLDivElement,
+        viewport: Types.IViewport,
+    ) {
+        let timeout: number | null = null;
+        const observer = new ResizeObserver(() => {
+            if (timeout) window.clearTimeout(timeout);
+            timeout = window.setTimeout(() => {
+                this.renderingEngine.resize(true, true);
+                viewport.setViewReference(viewport.getViewReference());
+                viewport.setViewPresentation(viewport.getViewPresentation());
+            }, 50);
+        });
+        observer.observe(element);
+        this.resizeObservers.set(viewportId, observer);
     }
 }
